@@ -1,0 +1,4 @@
+Your goal is to create new loaders based on the "Loader" interface.
+
+You can test your code by replacing "LoaderOBJ" with your new loader
+class in main.cpp.
