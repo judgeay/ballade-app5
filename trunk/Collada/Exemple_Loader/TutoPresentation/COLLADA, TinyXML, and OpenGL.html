@@ -1,0 +1,228 @@
+
+<!-- saved from url=(0055)http://www.dyn-lab.com/articles/collada-and-opengl.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<link href="./COLLADA, TinyXML, and OpenGL_files/css" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="http://www.dyn-lab.com/articles/articles.css">
+<title>COLLADA, TinyXML, and OpenGL</title>
+<style type="text/css"></style></head> 
+
+<body>
+
+<div id="main">
+<p class="title">COLLADA, TinyXML, and OpenGL</p> 
+<p class="subtitle">Accessing Digital Assets in C++ for Three-Dimensional Rendering</p> 
+
+<p class="first_para">OpenGL rendering is based on vertices—three-dimensional points that encompass the objects in a model. Vertices are easy to understand and access in code, but a non-trivial model may contain thousands or even millions of these points. Rather than enter this data manually, developers rely on files that contain coordinates, colors, and normal vectors associated with vertices.</p>
+
+<p class="para">A common file format for storing 3-D digital content is the open-source COLLADA (Collaborative Design Activity) format. Many popular modeling tools can read and modify COLLADA data, including Blender, Maya, and SketchUp. This format is based on XML (Extensible Markup Language), so applications need to parse XML to access COLLADA's vertex information. This article presents a method for reading COLLADA files in C++ using the TinyXML toolset and rendering the data using OpenGL.
+</p>
+
+<p class="para">If you look through the example code <a href="http://code.google.com/p/collada-interface/">here</a>, you'll find a file called colladainterface.cpp that defines a C++ class called <code>ColladaInterface</code>. This class uses TinyXML routines to read data inside COLLADA files. To understand how this works, you need to be familiar with two technologies: COLLADA and TinyXML. The first two sections of this article provide overviews of these technologies and the last section explores how the <code>ColladaInterface</code> can be accessed in an OpenGL application.</p>
+
+<p class="section">1.&nbsp; The COLLADA Format for 3-D Digital Content</p>
+
+<p class="first_para">Like all modern XML formats, COLLADA has a schema document that defines the content of valid COLLADA files (*.dae). The current schema can be downloaded from the <a href="http://www.khronos.org/collada/">main page</a>. If you examine the schema, you'll see that the complete format is <i>vast</i>. A COLLADA design, commonly called a digital asset, can contain a great deal of information, including geometric data, material data, animation data, and even physical properties of the asset such as applied forces and inertial matrices.</p>
+
+<p class="para">But for the purposes of this article, our sole interest is mesh data. A COLLADA mesh provides information about the vertices of an object, and we'll be specifically interested in the following:</p>
+<ul>
+<li>The 3-D coordinates that identify where the vertices are located<br></li>
+<li>The normal vector for each vertex<br></li>
+<li>The manner in which the vertices should be connected to form the object<br></li>
+</ul>
+
+<p class="para">The example code contains a COLLADA file called sphere.dae, whose mesh defines a sphere centered at the origin with a diameter equal to 1. The file's overall XML structure is given as follows:</p>
+
+<p class="code">&lt;COLLADA&gt;<br>
+&nbsp;&nbsp;&nbsp;...<br>
+&nbsp;&nbsp;&nbsp;&lt;library_geometries&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;geometry&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;mesh&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/mesh&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/geometry&gt;<br>
+&nbsp;&nbsp;&nbsp;&lt;/library_geometries&gt;<br>
+&nbsp;&nbsp;&nbsp;...<br>
+&lt;/COLLADA&gt;</p>
+
+<p class="para">As shown, the root element is <code>&lt;COLLADA&gt;</code> and one of its child elements is <code>&lt;library_geometries&gt;</code>. This contains a <code>&lt;geometry&gt;</code> element for each object in the model. That is, if the model contains three spheres, the <code>&lt;library_geometries&gt;</code> element will contain three <code>&lt;geometry&gt;</code> subelements.</p>
+
+<p class="para">The <code>&lt;geometry&gt;</code> element contains the all-important <code>&lt;mesh&gt;</code> element, which holds the vertex data needed to render an object in the model. In the sphere.dae file, this element contains four children: two <code>&lt;source&gt;</code> elements, one <code>&lt;vertices&gt;</code> element, and one <code>&lt;triangles&gt;</code> element. We'll examine each of these element types in turn.</p>
+
+<p class="subsection">1.1&nbsp; The &lt;source&gt; Element</p>
+
+<p class="first_para">Every <code>&lt;mesh&gt;</code> element must contain one or more <code>&lt;source&gt;</code> elements that provide the raw data for an object's mesh. The sphere.dae file contains two <code>&lt;source&gt;</code> elements: one containing vertex coordinates and one containing the normal vector at each vertex. The structure of the first <code>&lt;source&gt;</code> element is given as follows:</p>
+
+<p class="code">&lt;source id="ID5"&gt;<br>
+&nbsp;&nbsp;&nbsp;&lt;float_array id="ID8" count="798"&gt;-5.551e-017 -2.608...&lt;/float_array&gt;<br>
+&nbsp;&nbsp;&nbsp;&lt;technique_common&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;accessor count="266" source="#ID8" stride="3"&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/accessor&gt;<br>
+&nbsp;&nbsp;&nbsp;&lt;/technique_common&gt;<br>
+&lt;/source&gt;</p>
+
+<p class="para">The <code>&lt;float_array&gt;</code> element contains 798 floating-point values. This is the primary data for the <code>&lt;source&gt;</code> element, and it doesn't have to be in floating-point format; the <code>&lt;source&gt;</code> element might contain an <code>&lt;int_array&gt;</code>, <code>&lt;bool_array&gt;</code>, or <code>&lt;name_array&gt;</code> instead.</p>
+
+<p class="para">In addition to the data, this <code>&lt;source&gt;</code> element contains a <code>&lt;technique_common&gt;</code> that identifies how the data should be accessed. Here, the <code>&lt;accessor&gt;</code> states that the floating-point data should be accessed in groups of three (<code>stride</code>) and that the array contains 266 such groups (<code>count</code>).</p>
+
+<p class="para">The <code>&lt;source&gt;</code> element provides raw data, but doesn't identify what the data means. For example, the sphere.dae file contains two <code>&lt;source&gt;</code> elements, but there's no way to know if the data represents vertex coordinates or normal vector components. The <code>&lt;vertices&gt;</code> element is needed to make this distinction, and will be discussed next.</p>
+
+<p class="subsection">1.2&nbsp; The &lt;vertices&gt; Element</p> 
+
+<p class="first_para">The sphere.dae file contains two <code>&lt;source&gt;</code> elements: one whose ID equals <code>ID5</code> and one whose ID equals <code>ID6</code>. Following the <code>&lt;source&gt;</code> elements, the <code>&lt;vertices&gt;</code> element is given as follows:</p>
+
+<p class="code">&lt;vertices id="ID7"&gt;<br>
+&nbsp;&nbsp;&nbsp;&lt;input semantic="POSITION" source="#ID5" /&gt;<br>
+&nbsp;&nbsp;&nbsp;&lt;input semantic="NORMAL" source="#ID6" /&gt;<br>
+&lt;/vertices&gt;</p>
+
+<p class="para">The <code>semantic</code> attribute identifies the meaning of the data inside the two <code>&lt;source&gt;</code> elements. In this file, the <code>&lt;source&gt;</code> element whose ID equals <code>ID5</code> contains position information (<code>POSITION</code>). The <code>&lt;source&gt;</code> element whose ID equals <code>ID6</code> contains normal vector components (<code>NORMAL</code>). Other values of the <code>semantic</code> attribute include <code>COLOR</code>, <code>TEXCOORD</code>, <code>TEXTURE</code>, <code>TANGENT</code>, <code>BINORMAL</code>, and <code>UV</code>.</p>
+
+<p class="para">At this point, we have a great deal of vertex data and we know what the data means. But before we can use this data to render the sphere, we need to know how the vertices are combined into the basic shapes that define a three-dimensional object. These basic shapes, called <i>primitives</i>, include lines, triangles, and polygons. In sphere.dae, this information is provided by the <code>&lt;triangles&gt;</code> element.</p>
+
+<p class="subsection">1.3&nbsp; The &lt;triangles&gt; Element</p> 
+
+<p class="first_para">COLLADA supports many different types of primitives and each has its own element designation: <code>&lt;lines&gt;</code>, <code>&lt;triangles&gt;</code>, <code>&lt;trifans&gt;</code>, <code>&lt;tristrips&gt;</code>, <code>&lt;polygons&gt;</code>, and so on. In the case of sphere.dae, the vertices are organized into triangles, so the <code>&lt;mesh&gt;</code> contains a <code>&lt;triangles&gt;</code> element. This element is given as follows:</p>
+
+<p class="code">&lt;triangles count="528" material="Material2"&gt;<br>
+&nbsp;&nbsp;&nbsp;&lt;input offset="0" semantic="VERTEX" source="#ID7" /&gt;<br>
+&nbsp;&nbsp;&nbsp;&lt;p&gt;0 1 2 1 0 3...&lt;/p&gt;<br>
+&lt;/triangles&gt;</p>
+
+<p class="para">The <code>count</code> attribute states that there are 528 triangles and the <code>material</code> attribute identifies the material to be applied to each triangle. At first, it may seem odd that the <code>&lt;source&gt;</code> element contains 266 vertices and the model contains 528 triangles. After all, if there are N vertices, you might expect them to form N/3 triangles. But reuses vertices between connected triangles. For example, if two triangles share a line segment, only four unique vertex locations are needed.</p>
+
+<p class="para">The <code>&lt;p&gt;</code> element identifies how each vertex should be reused within each triangle. In sphere.dae, the first triangle consists of Vertex 0, Vertex 1, and Vertex 2. The second triangle consists of Vertex 1, Vertex 0, and Vertex 3. The orientation is important—OpenGL culls polygons according to whether their vertices are given in clockwise or counter-clockwise order.</p>
+
+<p class="para">If you look through the indices in sphere.dae, you'll see that the highest index is 265. This should make sense, as the mesh contains 266 vertices.</p>
+
+<p class="para">The discussion in this section has covered only a small portion of the COLLADA standard and has brushed over many of the subtler aspects of storing digital asset data. However, this information will be sufficient to tell us how to render the sphere. But before we can start coding with OpenGL, we need a way to parse through the XML in the *.dae file. The next section discusses this in detail.</p>
+
+<p class="section">2.&nbsp; TinyXML for XML Access</p>
+
+<p class="first_para">There are many toolsets available for accessing XML-formatted data, including such popular libraries as Xerces and libxml2. However, my favorite is <a href="http://www.grinninglizard.com/tinyxml/">TinyXML</a>, which was designed to be easy to work with. TinyXML makes it possible to read and write XML data, but for this article, our only concern is reading from COLLADA files. For this, only three classes are important: <code>TiXmlNode</code>, <code>TiXmlDocument</code>, and <code>TiXmlElement</code>. Figure 1 shows the inheritance hierarchy.</p>
+
+<img src="./COLLADA, TinyXML, and OpenGL_files/classdiagram.png" border="0">
+<p class="caption">Figure 1: Inheritance Hierarchy for Important TinyXML Classes</p>
+
+<p class="para">To read data from an XML file, the first step is to create a <code>TiXmlDocument</code> object for the file and invoke its <code>loadFile</code> function. The <code>TiXmlDocument</code> constructor accepts a file name, so the following code configures a <code>TiXmlDocument</code> for sphere.dae:</p>
+
+<p class="code">TiXmlDocument doc("sphere.dae");<br>
+doc.LoadFile();</p>
+
+<p class="para">Each element in the XML file corresponds to a <code>TiXmlElement</code> object in TinyXML. For example, the root element of a COLLADA file, identified by <code>&lt;COLLADA&gt;</code>, can be accessed as a <code>TiXmlElement</code>. This access is made possible through the <code>RootElement</code> function of the <code>TiXmlDocument</code> class.</p>
+
+<p class="code">TiXmlElement *root = doc.RootElement();</p>
+
+<p class="para">Now that we have the first element, we can call any of the functions of the <code>TiXmlNode</code> or <code>TiXmlElement</code> classes. Three of the most important functions are given as follows:</p>
+
+<ul>
+<li><code>FirstChildElement(const char* name)</code> - Returns the <code>TiXmlElement</code> corresponding to the first child element with the given name</li>
+<li><code>NextSiblingElement()</code> - Returns the <code>TiXmlElement</code> corresponding to the next element at the same level as this one</li>
+<li><code>Attribute(const char* name)</code> - Returns the <code>char</code> array corresponding to the named attribute<br></li>
+</ul>
+
+<p class="para">The first two functions can be used together to iterate through elements in an XML file. For example, suppose the XML file has the following structure:</p>
+
+<p class="code">&lt;parent&gt;<br>
+&nbsp;&nbsp;&nbsp;child_a&gt;...&lt;/child_a&gt;<br>
+&nbsp;&nbsp;&nbsp;child_b&gt;...&lt;/child_b&gt;<br>
+&nbsp;&nbsp;&nbsp;child_c&gt;...&lt;/child_c&gt;<br>
+&lt;/parent&gt;</p>
+
+<p class="para">If the <code>TiXmlElement</code> called <code>parent</code> corresponds to the <code>&lt;parent&gt;</code> element, the following code will cycle through each of its children:</p>
+
+<p class="code">child = parent-&gt;FirstChildElement("child_a");<br>
+while(child != NULL) {<br>
+&nbsp;&nbsp;&nbsp;...<br>
+&nbsp;&nbsp;&nbsp;child = child.NextSiblingElement();<br>
+}</p>
+
+<p class="para">The <code>Attribute</code> function accepts the name of an attribute and returns the attribute's value as a <code>char</code> array. For example, if the element <code>child</code> has an attribute called <code>name</code>, the following code will print the attribute's value to standard output:</p>
+
+<p class="code">cout &lt;&lt; child-&gt;Attribute("name") &lt;&lt; endl;</p>
+
+<p class="para">If an attribute has a numeric value, the functions <code>QueryIntValue</code>, <code>QueryFloatValue</code>, and <code>QueryDoubleValue</code> will return its value with the given type. For example, suppose the <code>&lt;child&gt;</code> element has an attribute called <code>age</code> whose value is an integer. This value can be obtained with the following code:</p>
+
+<p class="code">int age;<br>
+child-&gt;QueryIntValue("age", &amp;age);</p>
+
+<p class="para">The TinyXML toolset provides many more classes and functions than those discussed here, and you can read through the online documentation <a href="http://www.grinninglizard.com/tinyxmldocs/index.html">here</a>. But if you only want to read mesh data from a COLLADA file, the material we've discussed so far will be sufficient. The next section will show how the <code>ColladaInterface</code> class reads COLLADA data into an OpenGL application.</p>
+
+<p class="section">3.&nbsp; Rendering COLLADA Graphics with OpenGL<br></p>
+
+<p class="first_para">The <code>ColladaInterface</code> class provides an important function called <code>readGeometries</code>, which accepts a vector of <code>ColGeom</code> structures and the name of a COLLADA file. The function reads the mesh data in the COLLADA file and uses it to populate the vector. Specifically, the function creates one ColGeom structure for each <code>&lt;geometry&gt;</code> element in the COLLADA file. This section will present the <code>ColGeom</code> data structure in detail and show how it can be to render an object in 3-D.</p>
+
+<p class="subsection">3.1&nbsp; The ColGeom Data Structure</p>
+
+<p class="first_para">As discussed earlier, each object in a model corresponds to a <code>&lt;geometry&gt;</code> element in a COLLADA file. To access this information in C++, colladainterface.h defines a structure called <code>ColGeom</code>. The definition is given as follows:</p>
+
+<p class="code">struct ColGeom {<br>
+&nbsp;&nbsp;&nbsp;std::string name;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// The ID attribute of the <geometry> element<br>
+&nbsp;&nbsp;&nbsp;SourceMap map;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Contains data in the <source> elements<br>
+&nbsp;&nbsp;&nbsp;GLenum primitive;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Identifies the primitive type, such as GL_LINES<br>
+&nbsp;&nbsp;&nbsp;int index_count;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// The number of indices used to draw elements<br>
+&nbsp;&nbsp;&nbsp;unsigned short* indices;&nbsp;&nbsp;// The index data from the element<br>
+};</geometry></p>
+
+<p class="first_para">The <code>map</code> field, of type <code>SourceMap</code>, contains the data provided by the <code>&lt;source&gt;</code> elements in the geometry. This type is defined with the following statement:</p>
+
+<p class="code">typedef std::map&lt;std::string, SourceData&gt; SourceMap;</p>
+
+<p class="para">The map matches the source's semantic name to its data. As explained earlier, the semantic name is given by the <code>&lt;vertices&gt;</code> element, and may take values such as <code>POSITION</code>, <code>NORMALS</code>, or <code>TEXCOORDS</code>. The <code>SourceData</code> element contains the mesh data corresponding to the <code>&lt;source&gt;</code> element, and is defined as follows:</p>
+
+<p class="code">struct SourceData {<br>
+&nbsp;&nbsp;&nbsp;GLenum type;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// The data type of the mesh data, such as GL_FLOAT<br>
+&nbsp;&nbsp;&nbsp;unsigned int size;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Size of the mesh data in bytes<br>
+&nbsp;&nbsp;&nbsp;unsigned int stride;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Number of data values per group<br>
+&nbsp;&nbsp;&nbsp;void* data;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Mesh data<br>
+};</p>
+
+<p class="para">Using <code>void</code> pointers is generally a mistake, but there's no way to know in advance what type of data the <code>&lt;source&gt;</code> element contains. If the <code>&lt;source&gt;</code> element contains a <code>&lt;float_array&gt;</code>, the <code>data</code> field consists of <code>float</code>s. If the <code>&lt;source&gt;</code> element contains an <code>&lt;int_array&gt;</code>, <code>data</code> consists of <code>int</code>s.</p>
+
+<p class="subsection">3.2&nbsp; Using the ColGeom Structure in OpenGL Rendering</p>
+
+<p class="first_para">The <a href="http://code.google.com/p/collada-interface/">example code</a> contains a file called draw_sphere.cpp. This reads from a COLLADA file called sphere.dae and places the mesh data in a vector of <code>ColGeom</code> structures.</p>
+
+<p class="code">ColladaInterface::readGeometries(&amp;geom_vec, "sphere.dae");</p>
+
+<p class="para">After reading from sphere.dae, the application places the mesh data in OpenGL memory objects. For each <code>ColGeom</code> in the vector, it creates one vertex array object (VAO) and two vertex buffer objects. The first VBO contains vertex coordinates and the second contains normal vector components.</p>
+
+<p class="para">Once the VAOs and VBOs are created, the application initializes them with data from the <code>ColGeom</code>. For the vertex coordinates, the application accesses <code>geom_vec.map["POSITION"]</code> because <code>POSITION</code> is the semantic corresponding to vertex positions. For the normal components, the application accesses <code>geom_vec.map["NORMAL"]</code> because <code>NORMAL</code> is the semantic corresponding to normal vectors. The following code shows how this works:</p>
+
+<p class="code">for(int i=0; i&lt;num_objects; i++) {<br>
+&nbsp;&nbsp;&nbsp;glBindVertexArray(vaos[i]);<br><br>
+
+&nbsp;&nbsp;&nbsp;// Set vertex coordinate data<br>
+&nbsp;&nbsp;&nbsp;glBindBuffer(GL_ARRAY_BUFFER, vbos[2*i]);<br>
+&nbsp;&nbsp;&nbsp;glBufferData(GL_ARRAY_BUFFER, geom_vec[i].map["POSITION"].size,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;geom_vec[i].map["POSITION"].data, GL_STATIC_DRAW);<br>
+&nbsp;&nbsp;&nbsp;loc = glGetAttribLocation(program, "in_coords");<br>
+&nbsp;&nbsp;&nbsp;glVertexAttribPointer(loc, geom_vec[i].map["POSITION"].stride, <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;geom_vec[i].map["POSITION"].type, GL_FALSE, 0, 0);<br>
+&nbsp;&nbsp;&nbsp;glEnableVertexAttribArray(0);<br><br>
+
+&nbsp;&nbsp;&nbsp;// Set normal vector data<br>
+&nbsp;&nbsp;&nbsp;glBindBuffer(GL_ARRAY_BUFFER, vbos[2*i+1]);<br>
+&nbsp;&nbsp;&nbsp;glBufferData(GL_ARRAY_BUFFER, geom_vec[i].map["NORMAL"].size, <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;geom_vec[i].map["NORMAL"].data, GL_STATIC_DRAW);<br>
+&nbsp;&nbsp;&nbsp;loc = glGetAttribLocation(program, "in_normals");<br>
+&nbsp;&nbsp;&nbsp;glVertexAttribPointer(loc, geom_vec[i].map["NORMAL"].stride, <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;geom_vec[i].map["NORMAL"].type, GL_FALSE, 0, 0);<br>
+&nbsp;&nbsp;&nbsp;glEnableVertexAttribArray(1);<br>
+}</p>
+
+<p class="para">The first <code>glVertexAttribPointer</code> call associates the vertex coordinates with the attribute <code>in_coords</code>. The vertex shader (draw_sphere.vert) uses this to set the location of each vertex in the model. The second call to <code>glVertexAttribPointer</code> associates the normal vector components with the attribute <code>in_normals</code>. The fragment shader uses this to determine the model's lighting. Figure 2 shows the result.</p>
+
+<img src="./COLLADA, TinyXML, and OpenGL_files/sphere.png" border="0">
+<p class="caption">Figure 2: COLLADA Mesh Rendered by OpenGL</p>
+
+<p class="para">When the window is closed, the application calls <code>ColladaInterface::freeGeometries</code>. This deallocates the memory associated with the mesh data read from sphere.dae.</p>
+
+<p class="section">4.&nbsp; Conclusion</p>
+
+<p class="first_para">This article has presented a method for accessing data inside COLLADA files and using the data to render objects in an OpenGL application. The <code>ColladaInterface</code> class reads mesh data from *.dae files and places the vertex properties in <code>ColGeom</code> structures. This class is open-source, and there's plenty of room for improvement. But to work with the code, you need a solid understanding of TinyXML and COLLADA.</p>
+</div>
+
+
+</body></html>
