@@ -17,7 +17,7 @@ public class Vector2
 	public Vector2(double[] array)
 	{
 		if(array.length != 2)
-			throw new RuntimeException("Must create vector with 3 element array");
+			throw new RuntimeException("Must create vector with 2 element array");
 
         xy[0] = array[0];
         xy[1] = array[1];
