@@ -10,20 +10,43 @@ public class Point {
 
     @Element
     private String coordinates;
+    
+    @Element(required=false)
+    private String altitudeMode;
+    
+    @Element(required=false)
+    private boolean extrude;
 
-    public Point() {
+    public boolean isExtrude() {
+		return extrude;
+	}
+
+	public void setExtrude(boolean extrude) {
+		this.extrude = extrude;
+	}
+
+	public Point() {
         super();
     }
 
-    public Point(String coordinates) {
+    public Point(String coordinates, String altMode) {
         super();
         this.coordinates = coordinates;
+        this.altitudeMode = altMode;
     }
 
-    public String getCoordinates() {
+    public String getAltitudeMode() {
+		return altitudeMode;
+	}
+
+	public void setAltitudeMode(String altitudeMode) {
+		this.altitudeMode = altitudeMode;
+	}
+
+	public String getCoordinates() {
         return coordinates;
     }
-
+    
     public void setCoordinates(String coordinates) {
         this.coordinates = coordinates;
     }

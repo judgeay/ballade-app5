@@ -20,6 +20,12 @@ public class Style {
 
     @Element(required=false)
     private ListStyle ListStyle;
+    
+    @Element(required=false)
+    private PolyStyle PolyStyle;
+    
+    @Element(required=false)
+    private BalloonStyle BalloonStyle;
 
     public Style() {
         super();
