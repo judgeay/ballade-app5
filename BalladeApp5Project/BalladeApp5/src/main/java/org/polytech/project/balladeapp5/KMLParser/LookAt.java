@@ -8,10 +8,10 @@ import org.simpleframework.xml.Element;
 
 public class LookAt {
 
-    @Element
+    @Element(required=false)
     private double longitude;
 
-    @Element
+    @Element(required=false)
     private double latitude;
 
     @Element(required=false)
@@ -23,21 +23,32 @@ public class LookAt {
     @Element(required=false)
     private double heading;
 
+    @Element(required=false)
+    private double altitude;
+    
     public LookAt() {
         super();
     }
 
-    public LookAt(double longitude, double latitude, double range, double tilt,
-                  double heading) {
+    public LookAt(double longitude, double latitude, double altitude, double heading, double tilt, double range) {
         super();
         this.longitude = longitude;
         this.latitude = latitude;
         this.range = range;
         this.tilt = tilt;
         this.heading = heading;
+        this.altitude = altitude;
     }
 
-    public double getLongitude() {
+    public double getAltitude() {
+		return altitude;
+	}
+
+	public void setAltitude(double altitude) {
+		this.altitude = altitude;
+	}
+
+	public double getLongitude() {
         return longitude;
     }
 

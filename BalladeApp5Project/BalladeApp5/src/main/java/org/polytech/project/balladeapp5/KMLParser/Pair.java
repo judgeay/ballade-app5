@@ -7,11 +7,11 @@ package org.polytech.project.balladeapp5.KMLParser;
 import org.simpleframework.xml.Element;
 
 public class Pair {
-    @Element
+    @Element(required=false)
     private String key;
 
-    @Element
-    private Style Style;
+    @Element(required=false)
+    private String styleUrl;
 
     public Pair() {
         super();
@@ -25,11 +25,11 @@ public class Pair {
         this.key = key;
     }
 
-    public Style getStyle() {
-        return Style;
+    public String getStyle() {
+        return styleUrl;
     }
 
-    public void setStyle(Style style) {
-        this.Style = style;
+    public void setStyle(String style) {
+        this.styleUrl = style;
     }
 }

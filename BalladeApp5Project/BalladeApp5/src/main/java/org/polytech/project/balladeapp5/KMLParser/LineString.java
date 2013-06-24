@@ -11,11 +11,44 @@ public class LineString {
     @Element(required=false)
     private String coordinates;
 
-    public LineString() {
+    @Element(required=false)
+    private boolean tessellate;
+    
+    @Element(required=false)
+    private boolean extrude;
+    
+    public boolean isExtrude() {
+		return extrude;
+	}
+
+	public void setExtrude(boolean extrude) {
+		this.extrude = extrude;
+	}
+
+	@Element(required=false)
+    private String altitudeMode;
+    
+    public String getAltitudeMode() {
+		return altitudeMode;
+	}
+
+	public void setAltitudeMode(String altitudeMode) {
+		this.altitudeMode = altitudeMode;
+	}
+
+	public LineString() {
         super();
     }
 
-    public LineString(String coordinates) {
+    public boolean isTessellate() {
+		return tessellate;
+	}
+
+	public void setTessellate(boolean tessellate) {
+		this.tessellate = tessellate;
+	}
+
+	public LineString(String coordinates) {
         super();
         this.coordinates = coordinates;
     }
