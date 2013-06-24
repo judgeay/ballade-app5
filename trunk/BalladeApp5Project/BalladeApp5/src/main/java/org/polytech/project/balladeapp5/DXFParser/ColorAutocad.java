@@ -11,10 +11,6 @@ import java.util.HashMap;
 
 public class ColorAutocad {
 
-    char red;
-    char green;
-    char blue;
-
     public ColorAutocad() {
 
     }
