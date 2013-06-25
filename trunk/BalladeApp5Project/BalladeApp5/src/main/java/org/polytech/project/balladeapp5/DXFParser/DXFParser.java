@@ -16,7 +16,7 @@ public class DXFParser {
     {
         ArrayList<Mesh> result = new ArrayList<Mesh>();
         Mesh myMesh;
-        boolean vertexAjoute = false;
+        boolean vertexAjoute = false, meshTermine = false;
         double x, y, z;
         int codeCourant = -1;
         // ouvrir un stream du fichier
@@ -35,6 +35,7 @@ public class DXFParser {
             do {
                 ligne = ficTexte.readLine();
                 if (ligne != null) {
+                    meshTermine = false;
                     // Traiter jusque rencontre un objet à créer (Polyline, etc.)
                     if(ligne.equals("LINE"))
                     {
@@ -52,49 +53,51 @@ public class DXFParser {
                             x = y = z = 0;
                             Vector3 myVector = new Vector3();
                             Vector3 myColor = new Vector3();
+                            ligne = ficTexte.readLine();
+
+                            codeCourant = Integer.parseInt(ligne);
+                            // Fin de description du vertex
+                            if (codeCourant == 0)
+                            {
+                                myMesh.vertices.add(myVector);
+                                myMesh.colors.add(myColor);
+                                vertexAjoute = true;
                                 ligne = ficTexte.readLine();
-                                if (ligne != null) {
-                                    codeCourant = Integer.parseInt(ligne);
-                                    // Fin de description du vertex
-                                    if (codeCourant == 0)
-                                    {
-                                        newMesh.vertices.add(myVector);
-                                        newMesh.colors.add(myColor);
-                                        vertexAjoute = true;
+                                if (ligne.equals("SEQEND"))
+                                    meshTermine = true;
+                                break;
+                            }
+                            if (!meshTermine)
+                            {
+                                do{
+                                ligne = ficTexte.readLine();
+                                switch (codeCourant)
+                                {
+                                    case 10 :
+                                        x = Double.parseDouble(ligne);
+                                        break;
+                                    case 20 :
+                                        y = Double.parseDouble(ligne);
+                                        break;
+                                    case 30 :
+                                        z = Double.parseDouble(ligne);
+                                        break;
+                                    case 62 :
+                                        myColor = ColorAutocad.AutoCADcolors.get(Integer.parseInt(ligne));
+                                        break;
+                                    default :
+                                        // lire la ligne de données inutile pour notre projet
                                         ligne = ficTexte.readLine();
                                         break;
-                                    }
-                                    ligne = ficTexte.readLine();
-                                    switch (codeCourant)
-                                    {
-                                        case 10 :
-                                            x = Double.parseDouble(ligne);
-                                            break;
-                                        case 20 :
-                                            y = Double.parseDouble(ligne);
-                                            break;
-                                        case 30 :
-                                            z = Double.parseDouble(ligne);
-                                            break;
-                                        case 62 :
-                                            myColor = ColorAutocad.AutoCADcolors.get(Integer.parseInt(ligne));
-                                            break;
-                                        default :
-                                            // lire la ligne de données inutile pour notre projet
-                                            ligne = ficTexte.readLine();
-                                            break;
-                                    }
-
                                 }
-                                newMesh.vertices = null;
                             } while (!vertexAjoute);
+                        }
 
                             if (newMesh.colors.size() == 0)
                                 newMesh.colors.add(0, new Vector3(0,0,0));
 
                             result.add(newMesh);
                         }
-
 
                     }
                 }
