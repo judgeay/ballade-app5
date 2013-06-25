@@ -22,24 +22,37 @@ public class TheParser {
 		for (ModelObject o : model.objects) {
 			System.out.println(o.getName());
 			objects.add(convert(o));
+			break;
 		}
 		return objects;
 	}
 
 	public Mesh convert(ModelObject object) {
 		Mesh m = new Mesh();
+		ArrayList<Vector3> points = new ArrayList<Vector3>();
 		System.out.println(object.vertices.length);
 		for (int i = 0; i < object.vertices.length; i += 3) {
-			Vector3 v = new Vector3(object.vertices[i], object.vertices[i + 1],
-					object.vertices[i + 2]);
-			m.vertices.add(v);
+			// Vector3 v = ;
+			// points.add(v);
 		}
-		/*
-		 * for (int i = 0; i < object.polygons.length; i++) { float v1 =
-		 * object.vertices[object.polygons[i]]; float v2 =
-		 * object.vertices[object.polygons[i] + 1]; float v3 =
-		 * object.vertices[object.polygons[i] + 2]; }
-		 */
+		System.out.println(object.polygons.length);
+		for (int i = 0; i < object.polygons.length; i += 3) {
+			Vector3 v1 = new Vector3(object.vertices[object.polygons[i]],
+					object.vertices[object.polygons[i] + 1],
+					object.vertices[object.polygons[i] + 2]);
+			Vector3 v2 = new Vector3(object.vertices[object.polygons[i + 1]],
+					object.vertices[object.polygons[i + 1] + 1],
+					object.vertices[object.polygons[i + 1] + 2]);
+			Vector3 v3 = new Vector3(object.vertices[object.polygons[i + 2]],
+					object.vertices[object.polygons[i + 2] + 1],
+					object.vertices[object.polygons[i + 2] + 2]);
+			m.vertices.add(v1);
+			m.vertices.add(v2);
+			m.vertices.add(v3);
+			System.out.println("face : " + v1.toString() + ", " + v2.toString()
+					+ ", " + v3.toString());
+		}
+
 		return m;
 	}
 }
