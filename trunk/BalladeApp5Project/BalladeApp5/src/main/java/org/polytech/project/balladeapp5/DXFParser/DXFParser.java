@@ -15,9 +15,9 @@ public class DXFParser {
     public static List<Mesh> ParseDXFFile (String path) throws IOException
     {
         ArrayList<Mesh> result = new ArrayList<Mesh>();
-        Mesh myMesh;
-        boolean vertexAjoute = false, meshTermine = false;
+
         double x, y, z;
+        int color = -1;
         int codeCourant = -1;
         // ouvrir un stream du fichier
         String ligne = "";
@@ -29,13 +29,14 @@ public class DXFParser {
         try {
             ficTexte = new BufferedReader(new FileReader(new File(path)));
             if (ficTexte == null) {
-                throw new FileNotFoundException("Fichier non trouvé: "
-                        + fichier);
+                throw new FileNotFoundException("Fichier non trouvé: " + path);
             }
+
+
             do {
+                // Lecture de la ligne suivante
                 ligne = ficTexte.readLine();
                 if (ligne != null) {
-                    meshTermine = false;
                     // Traiter jusque rencontre un objet à créer (Polyline, etc.)
                     if(ligne.equals("LINE"))
                     {
@@ -44,61 +45,45 @@ public class DXFParser {
                     }
                     else if(ligne.equals("POLYLINE"))
                     {
-                        ligne = ficTexte.readLine();
                         Mesh MeshCourante = new Mesh();
-                        while (!ligne.equals("VERTEX"))
+                        x = y = z = 0;
+                        codeCourant = -1 ;
+                        do
+                        {
+                            // lecture d'une ligne de données inutile
                             ligne = ficTexte.readLine();
-
-                        do {
-                            x = y = z = 0;
-                            Vector3 myVector = new Vector3();
-                            Vector3 myColor = new Vector3();
-                            ligne = ficTexte.readLine();
-
                             codeCourant = Integer.parseInt(ligne);
-                            // Fin de description du vertex
-                            if (codeCourant == 0)
+                            switch (codeCourant)
                             {
-                                myMesh.vertices.add(myVector);
-                                myMesh.colors.add(myColor);
-                                vertexAjoute = true;
-                                ligne = ficTexte.readLine();
-                                if (ligne.equals("SEQEND"))
-                                    meshTermine = true;
-                                break;
+                                case 0 :
+                                    // Ajouter le vertex courant à la mesh
+                                    MeshCourante.vertices.add(new Vector3(x, y, z));
+                                    MeshCourante.colors.add(ColorAutocad.AutoCADcolors.get(color));
+                                    // réinitialiser un vertex pour l'ajouter dans la prochaine passe
+                                    x = y = z = 0;
+                                    // couleur par défaut = noir
+                                    color = 0;
+                                    break;
+                                case 10 :
+                                    x = Double.parseDouble(ligne);
+                                    break;
+                                case 20 :
+                                    y = Double.parseDouble(ligne);
+                                    break;
+                                case 30 :
+                                    z = Double.parseDouble(ligne);
+                                    break;
+                                case 62 :
+                                    color = Integer.parseInt(ligne);
+                                    break;
+                                default :
+                                    // rien à faire, simplement ne pas traiter l'information (inutile pour notre représentation)
+                                    break;
                             }
-                            if (!meshTermine)
-                            {
-                                do{
-                                ligne = ficTexte.readLine();
-                                switch (codeCourant)
-                                {
-                                    case 10 :
-                                        x = Double.parseDouble(ligne);
-                                        break;
-                                    case 20 :
-                                        y = Double.parseDouble(ligne);
-                                        break;
-                                    case 30 :
-                                        z = Double.parseDouble(ligne);
-                                        break;
-                                    case 62 :
-                                        myColor = ColorAutocad.AutoCADcolors.get(Integer.parseInt(ligne));
-                                        break;
-                                    default :
-                                        // lire la ligne de données inutile pour notre projet
-                                        ligne = ficTexte.readLine();
-                                        break;
-                                }
-                            } while (!vertexAjoute);
-                        }
+                            ligne = ficTexte.readLine();
+                        } while ((codeCourant != 0) && (!ligne.equals("SEQEND")));
 
-                            if (newMesh.colors.size() == 0)
-                                newMesh.colors.add(0, new Vector3(0,0,0));
-
-                            result.add(newMesh);
-                        }
-
+                        result.add(MeshCourante);
                     }
                 }
             } while (ficTexte != null);
