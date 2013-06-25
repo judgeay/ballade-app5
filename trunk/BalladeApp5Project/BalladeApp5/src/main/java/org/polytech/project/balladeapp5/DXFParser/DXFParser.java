@@ -1,5 +1,7 @@
 package org.polytech.project.balladeapp5.DXFParser;
 
+import android.util.Log;
+
 import org.polytech.project.balladeapp5.Mesh;
 import org.polytech.project.balladeapp5.Vector3;
 
@@ -17,19 +19,19 @@ public class DXFParser {
         ArrayList<Mesh> result = new ArrayList<Mesh>();
 
         double x, y, z;
-        int color = -1;
+        int color = 0;
         int codeCourant = -1;
         // ouvrir un stream du fichier
         String ligne = "";
         // Test respect de la nomenclature des fichiers
-        if (path.substring(path.length() - 4, path.length()).equalsIgnoreCase(".dxf"))
-           throw new IllegalArgumentException("Wrong format - expected file format: .dxf");
+        if (path.substring(path.length() - 5, path.length()).equalsIgnoreCase(".dxf"))
+            throw new IllegalArgumentException("Wrong format - expected file format: .dxf");
 
         BufferedReader ficTexte;
         try {
             ficTexte = new BufferedReader(new FileReader(new File(path)));
             if (ficTexte == null) {
-                throw new FileNotFoundException("Fichier non trouvé: " + path);
+                throw new FileNotFoundException("Fichier non trouvÃ©: " + path);
             }
 
 
@@ -37,11 +39,9 @@ public class DXFParser {
                 // Lecture de la ligne suivante
                 ligne = ficTexte.readLine();
                 if (ligne != null) {
-                    // Traiter jusque rencontre un objet à créer (Polyline, etc.)
+                    // Traiter jusque rencontre un objet Ã  crÃ©er (Polyline, etc.)
                     if(ligne.equals("LINE"))
                     {
-
-
                     }
                     else if(ligne.equals("POLYLINE"))
                     {
@@ -50,18 +50,21 @@ public class DXFParser {
                         codeCourant = -1 ;
                         do
                         {
-                            // lecture d'une ligne de données inutile
+                            // lecture d'une ligne de donnÃ©es inutile
                             ligne = ficTexte.readLine();
+
+                            ligne = ligne.trim();
                             codeCourant = Integer.parseInt(ligne);
+                            ligne = ficTexte.readLine();
                             switch (codeCourant)
                             {
                                 case 0 :
-                                    // Ajouter le vertex courant à la mesh
+                                    // Ajouter le vertex courant Ã  la mesh
                                     MeshCourante.vertices.add(new Vector3(x, y, z));
                                     MeshCourante.colors.add(ColorAutocad.AutoCADcolors.get(color));
-                                    // réinitialiser un vertex pour l'ajouter dans la prochaine passe
+                                    // rÃ©initialiser un vertex pour l'ajouter dans la prochaine passe
                                     x = y = z = 0;
-                                    // couleur par défaut = noir
+                                    // couleur par dÃ©faut = noir
                                     color = 0;
                                     break;
                                 case 10 :
@@ -77,11 +80,10 @@ public class DXFParser {
                                     color = Integer.parseInt(ligne);
                                     break;
                                 default :
-                                    // rien à faire, simplement ne pas traiter l'information (inutile pour notre représentation)
+                                    // rien Ã  faire, simplement ne pas traiter l'information (inutile pour notre reprÃ©sentation)
                                     break;
                             }
-                            ligne = ficTexte.readLine();
-                        } while ((codeCourant != 0) && (!ligne.equals("SEQEND")));
+                        } while ((!ligne.equals("SEQEND"))); //(codeCourant != 0) &&
 
                         result.add(MeshCourante);
                     }
