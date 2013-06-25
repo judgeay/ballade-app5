@@ -7,10 +7,10 @@ import java.util.ArrayList;
  */
 public class Mesh
 {
-    ArrayList<Vector3> vertices;
-    ArrayList<Vector2> texCoords;
-    ArrayList<Vector3> normals;
-    ArrayList<Vector3> colors;
+    public ArrayList<Vector3> vertices;
+    public ArrayList<Vector2> texCoords;
+    public ArrayList<Vector3> normals;
+    public ArrayList<Vector3> colors;
 
     // Indices for vertex/texcoord/normal values in the
     // vertices/texCoords/normals arrays
