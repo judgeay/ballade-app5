@@ -9,6 +9,14 @@ import org.polytech.project.balladeapp5.Vector3;
 
 public class TheParser {
 
+	/**
+	 * Genere une liste de maillages. Retourne une liste vide si erreur
+	 * d'ouverture, lecture, ou fichier vide.
+	 * 
+	 * @param path
+	 *            Chemin vers le fichier 3DS.
+	 * @return ArrayList<Mesh>
+	 */
 	public ArrayList<Mesh> parseIt(String path) {
 		File file = new File(path);
 
