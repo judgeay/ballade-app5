@@ -17,7 +17,6 @@ public class DXFParser {
     public static List<Mesh> ParseDXFFile (String path) throws IOException
     {
         ArrayList<Mesh> result = new ArrayList<Mesh>();
-        int cpt = 0;
         double x, y, z;
         int color = 0;
         int codeCourant = -1;
@@ -38,11 +37,7 @@ public class DXFParser {
             do {
                 // Lecture de la ligne suivante
                 ligne = ficTexte.readLine();
-                ++cpt;
                 if (ligne != null) {
-                    // DEBUG ++cpt;
-                    //if (cpt % 500 == 0)
-                    System.out.println(cpt);
 
                     if(ligne.equals("EOF"))
                         break; // on quit
@@ -64,9 +59,6 @@ public class DXFParser {
                             ligne = ligne.trim();
                             codeCourant = Integer.parseInt(ligne);
                             ligne = ficTexte.readLine();
-                            ++cpt;
-                            //if (cpt % 500 == 0)
-                            System.out.println(cpt);
                             switch (codeCourant)
                             {
                                 case 0 :
