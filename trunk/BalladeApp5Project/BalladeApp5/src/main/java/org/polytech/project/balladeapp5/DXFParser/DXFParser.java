@@ -45,6 +45,47 @@ public class DXFParser {
                     // Traiter jusque rencontre un objet Ã  crÃ©er (Polyline, etc.)
                     if(ligne.equals("LINE"))
                     {
+                        Mesh MeshCourante = new Mesh();
+                        x = y = z = 0;
+                        codeCourant = -1 ;
+                        do
+                        {
+                            // lecture d'une ligne de donnÃ©es inutile
+                            ligne = ficTexte.readLine();
+
+                            ligne = ligne.trim();
+                            codeCourant = Integer.parseInt(ligne);
+                            ligne = ficTexte.readLine();
+                            ligne = ligne.trim();
+                            switch (codeCourant)
+                            {
+                                case 0 :
+                                    // Ajouter le vertex courant Ã  la mesh
+                                    System.out.println("ICI");
+                                    MeshCourante.vertices.add(new Vector3(x, y, z));
+                                    MeshCourante.colors.add(ColorAutocad.AutoCADcolors.get(color));
+                                    // rÃ©initialiser un vertex pour l'ajouter dans la prochaine passe
+                                    x = y = z = 0;
+                                    // couleur par dÃ©faut = noir
+                                    color = 0;
+                                    break;
+                                case 10 :
+                                    x = Double.parseDouble(ligne);
+                                    break;
+                                case 20 :
+                                    y = Double.parseDouble(ligne);
+                                    break;
+                                case 30 :
+                                    z = Double.parseDouble(ligne);
+                                    break;
+                                case 62 :
+                                    color = Integer.parseInt(ligne);
+                                    break;
+                                default :
+                                    // rien Ã  faire, simplement ne pas traiter l'information (inutile pour notre reprÃ©sentation)
+                                    break;
+                            }
+                        } while (codeCourant != 0);
                     }
                     else if(ligne.equals("POLYLINE"))
                     {
@@ -59,6 +100,7 @@ public class DXFParser {
                             ligne = ligne.trim();
                             codeCourant = Integer.parseInt(ligne);
                             ligne = ficTexte.readLine();
+                            ligne = ligne.trim();
                             switch (codeCourant)
                             {
                                 case 0 :
@@ -102,4 +144,3 @@ public class DXFParser {
     }
 
 }
-
