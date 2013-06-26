@@ -42,8 +42,6 @@ public class TheParser {
 	public Mesh convert(ModelObject object) {
 		Mesh m = new Mesh();
 		for (int i = 0; i < object.polygons.length; i += 3) {
-			// System.out.println("polygones : " + object.polygons[i] + " "
-			// + object.polygons[i + 1] + " " + object.polygons[i + 2]);
 			// premier point
 			float x = object.vertices[3 * object.polygons[i]];
 			float y = object.vertices[3 * object.polygons[i] + 1];
@@ -64,12 +62,11 @@ public class TheParser {
 			m.vertices.add(p1);
 			m.vertices.add(p2);
 			m.vertices.add(p3);
-			// System.out.println("Vertices: " + p1 + " " + p2 + " " + p3);
 			// recherche de la normale
 			Vector3 n1 = new Vector3(p2.x() - p1.x(), p2.y() - p1.y(), p2.z()
 					- p1.z());
-			Vector3 n2 = new Vector3(p2.x() - p1.x(), p2.y() - p1.y(), p2.z()
-					- p1.z());
+			Vector3 n2 = new Vector3(p3.x() - p2.x(), p3.y() - p2.y(), p3.z()
+					- p2.z());
 			m.normals.add(n1.cross(n2));
 		}
 
