@@ -42,26 +42,29 @@ public class TheParser {
 	public Mesh convert(ModelObject object) {
 		Mesh m = new Mesh();
 		for (int i = 0; i < object.polygons.length; i += 3) {
+			// System.out.println("polygones : " + object.polygons[i] + " "
+			// + object.polygons[i + 1] + " " + object.polygons[i + 2]);
 			// premier point
-			float x = object.vertices[object.polygons[i]];
-			float y = object.vertices[object.polygons[i] + 1];
-			float z = object.vertices[object.polygons[i] + 2];
+			float x = object.vertices[3 * object.polygons[i]];
+			float y = object.vertices[3 * object.polygons[i] + 1];
+			float z = object.vertices[3 * object.polygons[i] + 2];
 			Vector3 p1 = new Vector3(x, y, z);
 			// second point
-			x = object.vertices[object.polygons[i + 1]];
-			y = object.vertices[object.polygons[i + 1] + 1];
-			z = object.vertices[object.polygons[i + 1] + 2];
+			x = object.vertices[3 * object.polygons[i + 1]];
+			y = object.vertices[3 * object.polygons[i + 1] + 1];
+			z = object.vertices[3 * object.polygons[i + 1] + 2];
 			Vector3 p2 = new Vector3(x, y, z);
 			// troisieme point
-			x = object.vertices[object.polygons[i + 2]];
-			y = object.vertices[object.polygons[i + 2] + 1];
-			z = object.vertices[object.polygons[i + 2] + 2];
+			x = object.vertices[3 * object.polygons[i + 2]];
+			y = object.vertices[3 * object.polygons[i + 2] + 1];
+			z = object.vertices[3 * object.polygons[i + 2] + 2];
 			Vector3 p3 = new Vector3(x, y, z);
 			// ajout des points (issus des polygones) au maillage
 			// (dans le bon sens pour l'affichage)
 			m.vertices.add(p1);
 			m.vertices.add(p2);
 			m.vertices.add(p3);
+			// System.out.println("Vertices: " + p1 + " " + p2 + " " + p3);
 			// recherche de la normale
 			Vector3 n1 = new Vector3(p2.x() - p1.x(), p2.y() - p1.y(), p2.z()
 					- p1.z());
