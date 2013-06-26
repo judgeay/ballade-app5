@@ -67,6 +67,7 @@ public class TheParser {
 					- p1.z());
 			Vector3 n2 = new Vector3(p3.x() - p2.x(), p3.y() - p2.y(), p3.z()
 					- p2.z());
+			n1.normalize();
 			m.normals.add(n1.cross(n2));
 		}
 
