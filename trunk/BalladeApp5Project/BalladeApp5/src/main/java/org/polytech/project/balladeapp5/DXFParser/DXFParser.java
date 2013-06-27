@@ -61,7 +61,6 @@ public class DXFParser {
                             {
                                 case 0 :
                                     // Ajouter le vertex courant Ã  la mesh
-                                    System.out.println("ICI");
                                     MeshCourante.vertices.add(new Vector3(x, y, z));
                                     MeshCourante.colors.add(ColorAutocad.AutoCADcolors.get(color));
                                     // rÃ©initialiser un vertex pour l'ajouter dans la prochaine passe
